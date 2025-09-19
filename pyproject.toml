@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "brain-vis"
+version = "0.1.0"
+description = "Utilities for visualizing whole-mouse-brain images: RGBA transparency, contour overlays, and a Dash sunburst+slice viewer."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "Your Name"}]
+dependencies = [
+  "numpy",
+  "matplotlib>=3.6",
+  "plotly>=5.16",
+  "dash>=2.14",
+  "pandas>=1.5",
+  "tifffile",
+  "opencv-python",
+]
+
+[project.urls]
+Homepage = "https://example.com/brain-vis"
