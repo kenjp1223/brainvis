@@ -1,0 +1,13 @@
+MANIFEST.in
+README.md
+pyproject.toml
+brain_vis/__init__.py
+brain_vis/overlay.py
+brain_vis/regions.py
+brain_vis/rgba.py
+brain_vis/sunburst_app.py
+brain_vis.egg-info/PKG-INFO
+brain_vis.egg-info/SOURCES.txt
+brain_vis.egg-info/dependency_links.txt
+brain_vis.egg-info/requires.txt
+brain_vis.egg-info/top_level.txt

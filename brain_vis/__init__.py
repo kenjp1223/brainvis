@@ -4,9 +4,12 @@ from .overlay import (
     overlay_images, overlay_images_for_2_color, overlap_contour
 )
 from .sunburst_app import create_dash_app, run_app
+from .regions import get_subregions, create_mask_for_region
+
 __all__ = [
     "set_transparency",
-    "adjust_intensity","convert_to_cmap","convert_overlap_image",
-    "overlay_images","overlay_images_for_2_color","overlap_contour",
-    "create_dash_app","run_app",
+    "adjust_intensity", "convert_to_cmap", "convert_overlap_image",
+    "overlay_images", "overlay_images_for_2_color", "overlap_contour",
+    "create_dash_app", "run_app",
+    "get_subregions", "create_mask_for_region",
 ]

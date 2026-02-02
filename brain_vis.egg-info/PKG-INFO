@@ -1,3 +1,20 @@
+Metadata-Version: 2.1
+Name: brain-vis
+Version: 0.1.0
+Summary: Utilities for visualizing whole-mouse-brain images: RGBA transparency, contour overlays, and a Dash sunburst+slice viewer.
+Author: Your Name
+License: MIT
+Project-URL: Homepage, https://example.com/brain-vis
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+Requires-Dist: numpy
+Requires-Dist: matplotlib
+Requires-Dist: plotly
+Requires-Dist: dash
+Requires-Dist: pandas
+Requires-Dist: tifffile
+Requires-Dist: opencv-python
+
 # brain-vis
 
 Utilities for mouse-brain visualization:
