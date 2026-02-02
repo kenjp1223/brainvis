@@ -92,11 +92,8 @@ def create_dash_app(
     sunburst_range_color=None,
     uniformtext_minsize=10,
     uniformtext_mode='hide',
-<<<<<<< Current (Your changes)
-=======
     data_cmin=None,
     data_cmax=None,
->>>>>>> Incoming (Background Agent changes)
     **kwargs
     ):
     if not os.path.exists(outputpath):
