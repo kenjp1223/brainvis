@@ -12,6 +12,9 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 import matplotlib.colors as mcolors
 from .rgba import set_transparency
+from typing import Optional, Callable
+from .regions import get_subregions  # fallback if user doesn't pass one
+
 
 def mpl_to_plotly(cmap, n_colors=256):
     return [mcolors.to_hex(cmap(i/n_colors)) for i in range(n_colors)]
@@ -34,7 +37,9 @@ def generate_black_contours(id_slice):
         cv2.drawContours(overlay, contours, -1, (0, 0, 0, 255), 1)
     return overlay
 
-def generate_highlight_contours(id_slice, IDs):
+def generate_highlight_contours(id_slice, IDs=None):
+    if IDs is None:
+        IDs = []
     h, w = id_slice.shape
     overlay = np.zeros((h, w, 4), dtype=np.uint8)
     for mask_id in IDs:
@@ -51,7 +56,7 @@ def color_code_image(image_slice, id_slice=None, IDs=None, cmin=-2, cmax=2, colo
     base_uint8 = (base_color * 255).astype(np.uint8)
     base_rgba = np.dstack([base_uint8, np.full((h, w), 255, dtype=np.uint8)])
     black_overlay = generate_black_contours(id_slice)
-    yellow_overlay = generate_highlight_contours(id_slice, IDs or [])
+    yellow_overlay = generate_highlight_contours(id_slice, IDs)
 
     final_image = base_rgba.copy()
     mask_black = black_overlay[..., 3] > 0
@@ -73,22 +78,42 @@ def convert_boolean_to_categorical(data_by_region, column='rejected'):
         data_by_region[column] = pd.Categorical(data_by_region[column], categories=[-1, 0, 1])
     return data_by_region
 
-def create_dash_app(data_by_region, data_by_img, annotated_atlas_img, outputpath,
-                     get_subregions_func,
-                     colormap=plt.cm.coolwarm,
-                     tree_node_names='acronym',
-                     tree_node_parents='parent_acronym',
-                     data_variable='rejected',
-                     sunburst_continuous_scale=None,
-                     sunburst_range_color=None,
-                     uniformtext_minsize=10,
-                     uniformtext_mode='hide',
-                     **kwargs):
+def create_dash_app(
+    data_by_region,
+    data_by_img,
+    annotated_atlas_img,
+    outputpath,
+    get_subregions_func: Optional[Callable] = None,
+    colormap=plt.cm.coolwarm,
+    tree_node_names='acronym',
+    tree_node_parents='parent_acronym',
+    data_variable='rejected',
+    sunburst_continuous_scale=None,
+    sunburst_range_color=None,
+    uniformtext_minsize=10,
+    uniformtext_mode='hide',
+<<<<<<< Current (Your changes)
+=======
+    data_cmin=None,
+    data_cmax=None,
+>>>>>>> Incoming (Background Agent changes)
+    **kwargs
+    ):
     if not os.path.exists(outputpath):
         os.makedirs(outputpath)
+    # Normalization range for data_by_img display (vmin/vmax for colormap)
+    if data_cmin is None:
+        data_cmin = -7.5
+    if data_cmax is None:
+        data_cmax = 7.5
     if sunburst_continuous_scale is None:
         sunburst_continuous_scale = mpl_to_plotly(plt.cm.viridis)
     data_by_region = convert_boolean_to_categorical(data_by_region, column=data_variable)
+    if get_subregions_func is None:
+        # Use the default implementation from regions.py
+        get_subregions_func = lambda df, rid, return_original=True: get_subregions(
+            df, rid, return_original=return_original
+        )
 
     if data_by_region[data_variable].dtype != 'category':
         fig_sunburst = px.sunburst(
@@ -150,7 +175,7 @@ def create_dash_app(data_by_region, data_by_img, annotated_atlas_img, outputpath
          Input('z-minus-1', 'n_clicks'), Input('z-plus-1', 'n_clicks'), Input('z-plus-10', 'n_clicks')],
         State('region_info_store', 'data')
     )
-    def update_image(clickData, n_zm10, n_zm1, n_zp1, n_zp10, region_info, cmin=-7.5, cmax=7.5):
+    def update_image(clickData, n_zm10, n_zm1, n_zp1, n_zp10, region_info):
         ctx = dash.callback_context
         triggered_id = ctx.triggered[0]['prop_id'].split('.')[0] if ctx.triggered else None
 
@@ -183,7 +208,7 @@ def create_dash_app(data_by_region, data_by_img, annotated_atlas_img, outputpath
         data_slice = data_by_img[z_index, :, :]
         image_slice = annotated_atlas_img[z_index, :, :]
 
-        rgb_image_slice = color_code_image(data_slice, image_slice, IDs=np.array(region_info['IDs']), colormap=plt.cm.coolwarm, cmin=cmin, cmax=cmax)
+        rgb_image_slice = color_code_image(data_slice, image_slice, IDs=np.array(region_info['IDs']), colormap=colormap, cmin=data_cmin, cmax=data_cmax)
         region_info['rgb_image_slice'] = rgb_image_slice
         fig_image = px.imshow(rgb_image_slice)
 
