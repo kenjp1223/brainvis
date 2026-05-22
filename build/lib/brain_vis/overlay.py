@@ -16,28 +16,27 @@ def convert_to_cmap(image: np.ndarray, cmin: float=-2, cmax: float=2, colormap=p
     return colormap(norm(image))
 
 def convert_overlap_image(image: np.ndarray) -> np.ndarray:
+    """Map overlap image to RGBA with Greys: 0→black (background), 255→white (overlay)."""
     norm_image = adjust_intensity(image)
     colormap = plt.cm.Greys
     return colormap(norm_image)
 
-def overlay_images(base_color: np.ndarray, overlap_color: np.ndarray, alpha: float=0.5, colormap=None) -> np.ndarray:
+def overlay_images(base_color: np.ndarray, overlap_color: np.ndarray, alpha: float=0.5, colormap=None, overlap_black: bool = False) -> np.ndarray:
     base = base_color.copy()
     
     # Determine the value range of base_color (could be [0,1] or [0,255])
     max_val = np.max(base)
     value_range = 255 if max_val > 1.0 else 1.0
     
-    # Determine background color based on colormap's zero value color
-    if colormap is not None:
+    # Background color where overlap is 0: 0 (black) or value_range (255/white) based on overlap_black
+    if overlap_black:
+        background_value = 0
+    elif colormap is not None:
         # Get the color that the colormap returns for zero (normalized to 0.0)
         zero_color = colormap(0.0)
-        # Check if zero maps to white (or close to white)
-        # For RGBA, check if RGB values are all high (close to 1.0)
-        # If sum of RGB > 2.5, consider it white
         is_white_at_zero = np.sum(zero_color[:3]) > 2.5 if len(zero_color) >= 3 else False
         background_value = 0 if is_white_at_zero else value_range
     else:
-        # Default to white background if no colormap provided (backward compatibility)
         background_value = value_range
     
     # Set background where overlap is zero
@@ -53,9 +52,8 @@ def overlay_images(base_color: np.ndarray, overlap_color: np.ndarray, alpha: flo
         threshold = 0.01 if max_val <= 1.0 else 2.55
         mask = overlap_color <= threshold
     
-    # Set background - handle both 2D and 3D arrays
+    # Set background where overlap is zero
     if base.ndim == 3:
-        # For RGBA arrays, set RGB channels to background_value, keep alpha channel
         if base.shape[2] >= 3:
             base[mask, :3] = background_value
         else:
@@ -79,6 +77,7 @@ def overlap_contour(
     cmin2: float = -100,
     cmax2: float = 100,
     colormap2=plt.cm.viridis,
+    overlap_black: bool = False,
     ):  
     """Create a heatmap volume with optional second base image and overlay a contour volume.
 
@@ -97,7 +96,7 @@ def overlap_contour(
         base_image_color = overlay_images_for_2_color(base_image_color, base_image2_color, alpha=0.5)
 
     overlap_image_color = convert_overlap_image(overlap_image_adj)
-    overlayed_image = overlay_images(base_image_color, overlap_image_color, alpha=1.0, colormap=colormap)
+    overlayed_image = overlay_images(base_image_color, overlap_image_color, alpha=1.0, colormap=colormap, overlap_black=overlap_black)
 
     if outputpath:
         tifffile.imwrite(outputpath, overlayed_image)

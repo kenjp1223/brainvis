@@ -3,31 +3,51 @@ from typing import Optional, List
 import numpy as np
 import pandas as pd
 
+
 def get_subregions(
     dataframe: pd.DataFrame,
     region_id: int,
     collected: Optional[List[dict]] = None,
     return_original: bool = False,
+    id_col: str = "id",
+    parent_id_col: str = "parent_id",
 ) -> pd.DataFrame:
     """
-    Recursively collect all descendants of `region_id` from a flat atlas dataframe.
+    Recursively collect all descendants of a given region from a tree-structured dataframe.
 
-    Expected columns in `dataframe`: "id", "parent_id".
-    Returns a DataFrame containing rows for subregions (and, if return_original=True, also the original region).
+    Args:
+        dataframe: DataFrame containing tree structure defined by id and parent_id columns.
+        region_id: ID of the region to get subregions for.
+        collected: Internal list to store collected subregions during recursion. Defaults to None.
+        return_original: If True, include the original region in the result. Defaults to False.
+        id_col: Name of the column containing region IDs. Defaults to "id".
+        parent_id_col: Name of the column containing parent region IDs. Defaults to "parent_id".
+
+    Returns:
+        DataFrame containing rows for all subregions (descendants) of the given region_id.
+        If return_original=True, also includes the original region itself.
     """
     if collected is None:
         collected = []
 
-    # direct children of region_id
-    subregions = dataframe[dataframe["parent_id"] == region_id].to_dict("records")
+    # Find direct children of the given region_id
+    subregions = dataframe[dataframe[parent_id_col] == region_id].to_dict("records")
     collected.extend(subregions)
 
-    # recurse
-    for sub in subregions:
-        get_subregions(dataframe, sub["id"], collected, return_original=False)
+    # Recursively find subregions of each child
+    for subregion in subregions:
+        get_subregions(
+            dataframe,
+            subregion[id_col],
+            collected,
+            return_original=False,
+            id_col=id_col,
+            parent_id_col=parent_id_col,
+        )
 
+    # Include the original region if requested
     if return_original:
-        original = dataframe[dataframe["id"] == region_id].to_dict("records")
+        original = dataframe[dataframe[id_col] == region_id].to_dict("records")
         collected.extend(original)
 
     return pd.DataFrame(collected)
@@ -38,19 +58,39 @@ def create_mask_for_region(
     atlasimg: np.ndarray,
     atlas_df: pd.DataFrame,
     include_subregions: bool = False,
+    id_col: str = "id",
+    parent_id_col: str = "parent_id",
 ) -> np.ndarray:
     """
-    Make a boolean mask for `atlas_id` in `atlasimg` (Z,H,W or H,W). If include_subregions=True,
-    include all descendants of `atlas_id` as defined in `atlas_df` (columns: id, parent_id).
+    Create a boolean mask for a given region ID in an atlas image.
+
+    Args:
+        atlas_id: ID of the region to create a mask for.
+        atlasimg: Image array (2D or 3D) storing brain region labels for each pixel.
+        atlas_df: DataFrame containing tree structure of brain regions.
+        include_subregions: If True, include all descendant regions in the mask. Defaults to False.
+        id_col: Name of the column containing region IDs. Defaults to "id".
+        parent_id_col: Name of the column containing parent region IDs. Defaults to "parent_id".
+
+    Returns:
+        Boolean mask array of the same shape as atlasimg, with True values for pixels
+        belonging to the specified region (and its subregions if include_subregions=True).
     """
-    tmpmask = np.zeros(np.shape(atlasimg), dtype=bool)
+    mask = np.zeros(np.shape(atlasimg), dtype=bool)
+
     try:
         if include_subregions:
-            subset_df = get_subregions(atlas_df, atlas_id, return_original=True)
-            ids = subset_df["id"].values if len(subset_df) else np.array([atlas_id])
-            tmpmask[np.where(np.isin(atlasimg, ids))] = True
+            subset_df = get_subregions(
+                atlas_df, atlas_id, return_original=True, id_col=id_col, parent_id_col=parent_id_col
+            )
+            if len(subset_df) == 0:
+                mask[np.where(atlasimg == atlas_id)] = True
+            else:
+                ids = subset_df[id_col].values
+                mask[np.where(np.isin(atlasimg, np.append(ids, atlas_id)))] = True
         else:
-            tmpmask[np.where(atlasimg == atlas_id)] = True
+            mask[np.where(atlasimg == atlas_id)] = True
     except Exception:
-        print("No atlas_id in the atlas dataframe")
-    return tmpmask
+        print(f"Warning: Could not create mask for atlas_id {atlas_id} in the atlas dataframe")
+
+    return mask

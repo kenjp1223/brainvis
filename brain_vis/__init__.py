@@ -1,3 +1,9 @@
+try:
+    from importlib.metadata import version as _version, PackageNotFoundError
+    __version__ = _version("brain-vis")
+except (ImportError, PackageNotFoundError):
+    __version__ = "0.0.0+dev"
+
 from .rgba import set_transparency
 from .overlay import (
     adjust_intensity, convert_to_cmap, convert_overlap_image,
@@ -7,6 +13,7 @@ from .sunburst_app import create_dash_app, run_app
 from .regions import get_subregions, create_mask_for_region
 
 __all__ = [
+    "__version__",
     "set_transparency",
     "adjust_intensity", "convert_to_cmap", "convert_overlap_image",
     "overlay_images", "overlay_images_for_2_color", "overlap_contour",
