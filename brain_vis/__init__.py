@@ -10,7 +10,7 @@ from .overlay import (
     overlay_images, overlay_images_for_2_color, overlap_contour
 )
 from .sunburst_app import create_dash_app, run_app
-from .regions import get_subregions, create_mask_for_region
+from .regions import get_subregions, create_mask_for_region, get_slice
 
 __all__ = [
     "__version__",
