@@ -3,6 +3,35 @@ from typing import Optional, List
 import numpy as np
 import pandas as pd
 
+# subset to target region
+# make the slice move along the z position
+
+def get_slice(z,target_site_subids,hemi = 'left',window = 60):
+    ys = np.array([])
+    xs = np.array([])
+    if hemi == 'left':
+        hemi_slice = slice(0,atlas_img.shape[2]//2)
+    else:
+        hemi_slice = slice(atlas_img.shape[2]//2,atlas_img.shape[2])
+    for ID in target_site_subids:
+        y_,x_ = np.where(atlas_img[z,:,hemi_slice] == ID)
+        xs = np.concatenate([xs,x_])
+        ys = np.concatenate([ys,y_])
+    # find the center of mass of the OFC
+    y_center = int(np.mean(ys))
+    x_center = int(np.mean(xs))
+    # set the slice to the center of mass of the target site
+    if hemi == 'left':
+        yslice = slice(y_center-window,y_center+window)
+        xslice = slice(x_center-window,x_center+window)
+    elif hemi == 'right':
+        yslice = slice(y_center-window,y_center+window)
+        xslice = slice(x_center-window + atlas_img.shape[2]//2,x_center+window + atlas_img.shape[2]//2)        
+    elif hemi == 'center':
+        yslice = slice(y_center-window,y_center+window)
+        xslice = slice(atlas_img.shape[2]//2-window,window + atlas_img.shape[2]//2)
+
+    return yslice,xslice
 
 def get_subregions(
     dataframe: pd.DataFrame,
